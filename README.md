@@ -175,3 +175,22 @@ con con el motor standard de java de webSockets. También detecta beans anotados
 ServerEndpoint y los registra igualmente.
 
 ```java
+package com.weobsocketintro.websocketintro.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.web.socket.server.standard.ServerEndpointExporter;
+
+
+@Configuration
+@EnableScheduling
+public class WSConfigurator {
+
+    @Bean
+    ServerEndpointExporter serverEndpointExporter(){
+        return new ServerEndpointExporter();
+    }
+}
+```
+
