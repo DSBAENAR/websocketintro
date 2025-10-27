@@ -39,7 +39,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 4. Corra la clase que acabamos de crear y su servidor debe iniciar la ejecución
 
-```bash
+```bsh
 
   .   ____          _            __ _ _
  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
@@ -61,3 +61,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 2025-10-25T09:50:22.406-05:00  INFO 24611 --- [websocketintro] [           main] c.w.w.WebsocketintroApplication          : Started WebsocketintroApplication in 0.613 seconds (process running for 0.75)
 ```
 
+5. Verifique que se esté ejecutando accediendo a:
+ --- http://localhost:8080/status
+ ![alt text](/readme/img/image1.png)
+
+ 6. Verifique que el servidor esté entregando elementos estáticos web entrando a:
+ --- http://localhost:8080/index.html
+ ![alt text](/readme/img/image2.png)
