@@ -1,4 +1,4 @@
-## Getting Started
+# Getting Started
 
 1. Cree la siguiente clase que iniciará el servidor de aplicaciones de Spring
 
@@ -194,3 +194,89 @@ public class WSConfigurator {
 }
 ```
 
+## Ahora construimos el cliente Web
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <hr>
+  <div id="timer"></div>
+  </hr>
+  <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  <script src="js/WsComponent.jsx" type="text/babel"></script>
+</body>
+</html>
+```
+
+## Construyamos el componente ReactJS
+
+```jsx
+class WsClient extends React.Component{
+    constructor(props) {
+        super(props)
+        this.state = {
+            error:null,
+            isLoaded:false,
+            msg:""
+        }
+    }
+
+    componentDidMount(){
+        this.wsocket = new WebSocket("ws://localhost:8080/timer")
+        this.wsocket.onmessage = (evt) => {this.onMessage(evt)}
+        this.wsocket.onerror = (evt) => {this.onError(evt)}
+    }
+
+    onMessage(evt){
+        console.log("In onMessage",evt);
+        this.setState({
+            isLoaded:true,
+            msg:evt.data
+        })
+    }
+
+    onError(evt){
+        console.log("In onError",evt);
+        this.setState({
+            error:evt
+        })
+    }
+
+    render(){
+        console.log("Rendering...")
+
+        const {error,isLoaded,msg} = this.state
+
+        if(error){
+            return <div>Error: {error.message}</div>
+        }
+        else if(!isLoaded){
+            return <div>Loading...</div>
+        }
+        else{
+            return(
+                <div>
+                    <h1>The server status is:</h1>
+                    <p>{msg}</p>
+                </div>
+            )
+        }
+    }
+}
+
+ReactDOM.render(
+    <WsClient/>,
+    document.getElementById('timer')
+)
+```
+
+![alt text](/readme/img/image-2.png)
+![alt text](/readme/img/image-3.png)
+![alt text](/readme/img/image-4.png)
