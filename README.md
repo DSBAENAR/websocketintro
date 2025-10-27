@@ -62,9 +62,116 @@ import org.springframework.web.bind.annotation.ResponseBody;
 ```
 
 5. Verifique que se esté ejecutando accediendo a:
- --- http://localhost:8080/status
+ --- <http://localhost:8080/status>
  ![alt text](/readme/img/image1.png)
 
- 6. Verifique que el servidor esté entregando elementos estáticos web entrando a:
- --- http://localhost:8080/index.html
+6. Verifique que el servidor esté entregando elementos estáticos web entrando a:
+ --- <http://localhost:8080/index.html>
  ![alt text](/readme/img/image2.png)
+
+## Construyamos el EndPoint el servidor con Websockets
+
+ ```java
+ package com.weobsocketintro.websocketintro.Controller;
+
+import java.io.IOException;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.springframework.stereotype.Component;
+
+import jakarta.websocket.server.ServerEndpoint;
+import jakarta.websocket.OnClose;
+import jakarta.websocket.OnError;
+import jakarta.websocket.OnOpen;
+import jakarta.websocket.Session;
+@Component
+@ServerEndpoint("/timer")
+public class TimerEndpoint {
+    private static final Logger logger = Logger.getLogger("ETFEndpoint");
+    
+    static Queue<Session> queue = new ConcurrentLinkedQueue<>();
+
+    public static void send (String msg){
+        try {
+            for (Session s: queue){
+                s.getBasicRemote().sendText(msg);
+                logger.log(Level.INFO, "Sent: {0}",msg);
+            }
+        } catch (IOException e) {
+            logger.log(Level.INFO ,e.toString());
+        }
+    }
+
+    @OnOpen
+        public void openConnection(Session session) {
+        queue.add(session);
+        logger.log(Level.INFO, "Connection opened.");
+        try {
+        session.getBasicRemote().sendText("Connection established.");
+        } catch (IOException ex) {
+        Logger.getLogger(TimerEndpoint.class.getName()).log(Level.SEVERE,
+        null, ex);
+        }
+    }
+
+    @OnClose
+    public void closedConnection(Session session) {
+        queue.remove(session);
+        logger.log(Level.INFO, "Connection closed.");
+    }
+
+    @OnError
+    public void error(Session session, Throwable t) {
+        /* Remove this connection from the queue */
+        queue.remove(session);
+        logger.log(Level.INFO, t.toString());
+        logger.log(Level.INFO, "Connection error.");
+    }
+
+    
+}
+```
+
+## Construyamos una clase que emita mensajes desde el servidor
+
+```java
+package com.weobsocketintro.websocketintro.Controller;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.springframework.context.annotation.Scope;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+@Component
+@Scope("singleton")
+public class TimedMessageBroker {
+    private static final SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
+
+    private static final Logger logger = Logger.getLogger(TimedMessageBroker.class.getName());
+
+    @Scheduled(fixedRate = 5000)
+    public void broadcast(){
+        logger.log(Level.INFO, "broadcasting message");
+        TimerEndpoint.send("The current time is " + formatter.format(new Date()));
+    }
+}
+```
+
+## Ahora construyamos un componente que nos ayude a configurar el contenedor IoC
+
+Es necesario construir esta clase porque el contenedor de Servlets en Spring, TOMCAT,
+tiene deshabilitado por defecto la detección de componentes Endpoints. Así, no carga los
+componentes si no se le indica explícitamente. Esto parece un error de diseño pero por el
+momento esta es la situación.
+La clase ServerEndpointExporter detecta beans de tipo ServerEndpointConfig y los registra
+con con el motor standard de java de webSockets. También detecta beans anotados con
+ServerEndpoint y los registra igualmente.
+
+```java
